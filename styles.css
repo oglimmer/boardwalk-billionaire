@@ -1,0 +1,93 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+#game { display: flex; gap: 16px; transform-origin: center center; }
+#board { display: grid; grid-template-columns: repeat(11, 62px); grid-template-rows: repeat(11, 62px); gap: 1px; background: #2d2d44; border: 2px solid #444; flex-shrink: 0; }
+.space { background: #16213e; font-size: 7.5px; padding: 2px; display: flex; flex-direction: column; position: relative; overflow: hidden; cursor: pointer; border: 1px solid #333; }
+.space:hover { border-color: #888; z-index: 2; }
+.space .color-bar { height: 8px; margin: -2px -2px 1px -2px; flex-shrink: 0; }
+.space .name { font-weight: bold; line-height: 1.1; flex-grow: 1; font-size: 7px; }
+.space .price { font-size: 7px; color: #aaa; }
+.space .tokens { display: flex; gap: 1px; flex-wrap: wrap; position: absolute; bottom: 1px; right: 1px; }
+.space .token { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); font-size: 6px; display: flex; align-items: center; justify-content: center; }
+.space .houses { display: flex; gap: 1px; position: absolute; bottom: 1px; left: 1px; }
+.space .house { width: 6px; height: 6px; background: #2ecc71; border: 1px solid #27ae60; }
+.space .hotel { width: 8px; height: 8px; background: #e74c3c; border: 1px solid #c0392b; }
+.space.corner { font-size: 8px; font-weight: bold; text-align: center; justify-content: center; align-items: center; }
+.space.owned { box-shadow: inset 0 0 0 2px var(--owner-color); }
+.space.mortgaged { opacity: 0.5; }
+.center-area { grid-column: 2 / 11; grid-row: 2 / 11; background: #0f3460; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border-radius: 4px; }
+.center-area h1 { font-size: 20px; color: #e94560; margin-bottom: 5px; letter-spacing: 2px; line-height: 1.2; }
+.center-area .dice-display { font-size: 40px; margin: 10px; display: flex; gap: 10px; }
+.die { width: 50px; height: 50px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #333; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+.center-info { font-size: 12px; text-align: center; color: #ccc; margin-top: 5px; max-height: 80px; overflow-y: auto; }
+
+#sidebar { width: 320px; display: flex; flex-direction: column; gap: 10px; }
+.player-card { background: #16213e; border: 2px solid #333; border-radius: 8px; padding: 10px; }
+.player-card.active { border-color: #e94560; box-shadow: 0 0 10px rgba(233,69,96,0.3); }
+.player-card.bankrupt { opacity: 0.4; }
+.player-card .header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.player-card .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.player-card .pname { font-weight: bold; font-size: 14px; flex-grow: 1; }
+.player-card .money { font-weight: bold; color: #2ecc71; font-size: 14px; }
+.player-card .props { font-size: 11px; color: #aaa; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
+.player-card .prop-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; border: 1px solid rgba(255,255,255,0.3); }
+.player-card .prop-dot.mort { opacity: 0.3; }
+
+#controls { background: #16213e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+#controls button { padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+#controls button:hover { transform: translateY(-1px); }
+#controls button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+#btn-roll { background: #e94560; color: white; }
+#btn-end-turn { background: #0f3460; color: white; border: 1px solid #e94560; }
+#btn-build { background: #2ecc71; color: white; }
+#btn-mortgage { background: #f39c12; color: white; }
+#btn-trade { background: #9b59b6; color: white; }
+
+#log-container { background: #16213e; border-radius: 8px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+.log-tabs { display: flex; border-bottom: 2px solid #0f3460; flex-shrink: 0; }
+.log-tab { flex: 1; padding: 8px; border: none; background: transparent; color: #666; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+.log-tab:hover { color: #aaa; }
+.log-tab.active { color: #e94560; border-bottom: 2px solid #e94560; margin-bottom: -2px; }
+#log { padding: 10px; overflow-y: auto; max-height: 300px; font-size: 11px; line-height: 1.5; }
+.log-entry { padding: 2px 0; border-bottom: 1px solid #1a1a2e; }
+#stats { padding: 10px; overflow-y: auto; max-height: 300px; display: none; }
+#stats .stat-header { font-size: 13px; font-weight: bold; color: #e94560; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #333; }
+#stats .stat-total { font-size: 12px; color: #aaa; margin-bottom: 12px; }
+#stats .stat-player { margin-bottom: 10px; }
+#stats .stat-player-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+#stats .stat-player-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+#stats .stat-player-name { font-size: 12px; font-weight: bold; flex-grow: 1; }
+#stats .stat-player-total { font-size: 13px; font-weight: bold; color: #2ecc71; }
+#stats .stat-bar { height: 14px; border-radius: 3px; display: flex; overflow: hidden; margin-bottom: 2px; }
+#stats .stat-bar-cash { background: #2ecc71; }
+#stats .stat-bar-prop { background: #3498db; }
+#stats .stat-bar-build { background: #f39c12; }
+#stats .stat-bar-mort { background: #666; }
+#stats .stat-breakdown { font-size: 10px; color: #888; display: flex; gap: 8px; flex-wrap: wrap; }
+#stats .stat-breakdown span { display: flex; align-items: center; gap: 3px; }
+#stats .stat-legend { display: flex; gap: 10px; font-size: 10px; color: #888; margin-top: 10px; padding-top: 8px; border-top: 1px solid #333; }
+#stats .stat-legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+#chart { padding: 10px; display: none; }
+#chart canvas { width: 100%; border-radius: 4px; }
+#chart .chart-legend { display: flex; gap: 10px; font-size: 10px; color: #888; margin-top: 6px; justify-content: center; flex-wrap: wrap; }
+#chart .chart-legend span { display: flex; align-items: center; gap: 3px; }
+#chart .chart-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+#modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+#modal-overlay.show { display: flex; }
+#modal { background: #16213e; border: 2px solid #e94560; border-radius: 12px; padding: 20px; max-width: 400px; width: 90%; }
+#modal h2 { color: #e94560; margin-bottom: 10px; font-size: 18px; }
+#modal p { margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
+#modal .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+#modal button { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+.btn-yes { background: #2ecc71; color: white; }
+.btn-no { background: #e74c3c; color: white; }
+.btn-opt { background: #3498db; color: white; }
+
+#build-panel { display: none; background: #16213e; border: 2px solid #2ecc71; border-radius: 8px; padding: 12px; }
+#build-panel.show { display: block; }
+#build-panel h3 { color: #2ecc71; margin-bottom: 8px; font-size: 14px; }
+.build-option { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px; border-bottom: 1px solid #1a1a2e; font-size: 12px; }
+.build-option button { padding: 4px 10px; border: none; border-radius: 4px; background: #2ecc71; color: white; cursor: pointer; font-size: 11px; }
+.build-option button:disabled { opacity: 0.4; cursor: not-allowed; }
+.build-option button.sell-house { background: #e74c3c; }

@@ -27,6 +27,15 @@ Or serve it locally:
 npx serve .
 ```
 
+### Docker
+
+```bash
+docker build -t boardwalk-billionaire .
+docker run --rm -p 8080:80 boardwalk-billionaire
+```
+
+Then open [http://localhost:8080](http://localhost:8080).
+
 ## How to Play
 
 1. Click **Roll Dice** to take your turn
