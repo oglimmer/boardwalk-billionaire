@@ -7,7 +7,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useGameStore } from '../stores/game'
 import PlayerCard from './PlayerCard.vue'
 import GameControls from './GameControls.vue'

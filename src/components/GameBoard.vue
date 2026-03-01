@@ -5,7 +5,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import BoardSpace from './BoardSpace.vue'
 import BoardCenter from './BoardCenter.vue'
 </script>

@@ -33,7 +33,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game'
 import { SPACES, GROUPS } from '../data'
@@ -43,7 +43,7 @@ const store = useGameStore()
 const buildOptions = computed(() => {
   const opts = []
   const p = store.players[store.currentPlayer]
-  for (const [groupName, group] of Object.entries(GROUPS)) {
+  for (const [, group] of Object.entries(GROUPS)) {
     const hasMonopoly = group.members.every(m => store.properties[m] && store.properties[m].owner === store.currentPlayer && !store.properties[m].mortgaged)
     if (!hasMonopoly) continue
     let minHouses = 5, maxHouses = 0
@@ -73,18 +73,19 @@ const buildOptions = computed(() => {
 })
 
 const mortgageOptions = computed(() => {
-  const opts = []
+  const opts: { si: number; name: string; mortgaged: boolean; canAfford?: boolean; cost?: number; val?: number; hasHouses: boolean; houses?: number }[] = []
   const p = store.players[store.currentPlayer]
-  for (const [si, prop] of Object.entries(store.properties)) {
+  for (const [siStr, prop] of Object.entries(store.properties)) {
     if (prop.owner !== store.currentPlayer) continue
+    const si = Number(siStr)
     const sp = SPACES[si]
     if (prop.mortgaged) {
-      const cost = Math.floor(sp.price / 2 * 1.1)
-      opts.push({ si: parseInt(si), name: sp.name, mortgaged: true, canAfford: p.money >= cost, cost, hasHouses: false })
+      const cost = Math.floor(sp.price! / 2 * 1.1)
+      opts.push({ si, name: sp.name, mortgaged: true, canAfford: p.money >= cost, cost, hasHouses: false })
     } else if (prop.houses === 0) {
-      opts.push({ si: parseInt(si), name: sp.name, mortgaged: false, val: Math.floor(sp.price / 2), hasHouses: false })
+      opts.push({ si, name: sp.name, mortgaged: false, val: Math.floor(sp.price! / 2), hasHouses: false })
     } else {
-      opts.push({ si: parseInt(si), name: sp.name, mortgaged: false, hasHouses: true, houses: prop.houses })
+      opts.push({ si, name: sp.name, mortgaged: false, hasHouses: true, houses: prop.houses })
     }
   }
   return opts

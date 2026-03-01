@@ -1,4 +1,6 @@
-export const SPACES = [
+import type { Space, GroupName, Group, Card } from './types'
+
+export const SPACES: Space[] = [
   { name: "Start", type: "go" },
   { name: "Elm Lane", type: "property", group: "brown", price: 60, rent: [2,10,30,90,160,250] },
   { name: "Fortune", type: "card" },
@@ -39,9 +41,9 @@ export const SPACES = [
   { name: "Sapphire Blvd", type: "property", group: "darkblue", price: 350, rent: [35,175,500,1100,1300,1500] },
   { name: "Luxury Tax", type: "tax", amount: 100 },
   { name: "Diamond Plaza", type: "property", group: "darkblue", price: 400, rent: [50,200,600,1400,1700,2000] },
-];
+]
 
-export const GROUPS = {
+export const GROUPS: Record<GroupName, Group> = {
   brown:     { color: "#8B4513", members: [1,3], houseCost: 50 },
   lightblue: { color: "#87CEEB", members: [6,8,9], houseCost: 50 },
   pink:      { color: "#E91E90", members: [11,13,14], houseCost: 100 },
@@ -50,13 +52,13 @@ export const GROUPS = {
   yellow:    { color: "#FFD700", members: [26,27,29], houseCost: 150 },
   green:     { color: "#228B22", members: [31,32,34], houseCost: 200 },
   darkblue:  { color: "#1a1aff", members: [37,39], houseCost: 200 },
-};
+}
 
-export const RAILROAD_SPACES = [5,15,25,35];
-export const UTILITY_SPACES = [12,28];
-export const PLAYER_COLORS = ["#e74c3c","#3498db","#2ecc71","#f1c40f"];
+export const RAILROAD_SPACES: number[] = [5,15,25,35]
+export const UTILITY_SPACES: number[] = [12,28]
+export const PLAYER_COLORS: string[] = ["#e74c3c","#3498db","#2ecc71","#f1c40f"]
 
-export const CARDS = [
+export const CARDS: Card[] = [
   { title: "Lottery Scratch-Off", desc: "You won the scratch-off! Collect $200.", effect: "collect", amount: 200 },
   { title: "Tax Refund", desc: "The government owes you. Collect $100.", effect: "collect", amount: 100 },
   { title: "Freelance Bonus", desc: "Side hustle paid off. Collect $50.", effect: "collect", amount: 50 },
@@ -72,4 +74,4 @@ export const CARDS = [
   { title: "Wrong Turn", desc: "You took a wrong turn. Go back 3 spaces.", effect: "go_back", amount: 3 },
   { title: "Express Train", desc: "All aboard! Advance to the nearest station. If owned, pay double rent.", effect: "nearest_railroad" },
   { title: "Pipe Burst at Home", desc: "Repairs needed everywhere. Pay $40 per house and $115 per hotel.", effect: "repairs", perHouse: 40, perHotel: 115 },
-];
+]

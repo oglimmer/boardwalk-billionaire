@@ -6,7 +6,7 @@
   <ModalOverlay />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from './stores/game'
 import GameBoard from './components/GameBoard.vue'
@@ -14,7 +14,7 @@ import Sidebar from './components/Sidebar.vue'
 import ModalOverlay from './components/ModalOverlay.vue'
 
 const store = useGameStore()
-const gameRef = ref(null)
+const gameRef = ref<HTMLDivElement | null>(null)
 
 function scaleGame() {
   const el = gameRef.value
@@ -26,7 +26,7 @@ function scaleGame() {
   el.style.transform = `scale(${scale})`
 }
 
-function onKeydown(e) {
+function onKeydown(e: KeyboardEvent) {
   if (e.key === 'j') store.payJailFee()
 }
 

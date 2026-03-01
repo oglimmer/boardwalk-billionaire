@@ -21,26 +21,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game'
 import { SPACES, GROUPS, PLAYER_COLORS } from '../data'
 
-const props = defineProps({ playerIndex: Number })
+const props = defineProps<{ playerIndex: number }>()
 const store = useGameStore()
 
 const player = computed(() => store.players[props.playerIndex])
 
 const ownedProps = computed(() => {
-  const result = []
-  for (const [si, prop] of Object.entries(store.properties)) {
+  const result: { si: number; color: string; mortgaged: boolean; title: string }[] = []
+  for (const [siStr, prop] of Object.entries(store.properties)) {
     if (prop.owner === props.playerIndex) {
+      const si = Number(siStr)
       const sp = SPACES[si]
       const color = sp.group ? GROUPS[sp.group].color : (sp.type === 'railroad' ? '#555' : '#999')
       let title = sp.name
       if (prop.houses > 0) title += ` (${prop.houses === 5 ? 'H' : prop.houses + 'h'})`
       if (prop.mortgaged) title += ' [M]'
-      result.push({ si: parseInt(si), color, mortgaged: prop.mortgaged, title })
+      result.push({ si, color, mortgaged: prop.mortgaged, title })
     }
   }
   return result

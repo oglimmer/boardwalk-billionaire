@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useGameStore } from '../stores/game'
 import GameLog from './GameLog.vue'
 import GameStats from './GameStats.vue'

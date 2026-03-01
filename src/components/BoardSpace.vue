@@ -26,13 +26,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game'
 import { getGridPos } from '../utils/board'
 import { SPACES, GROUPS, PLAYER_COLORS } from '../data'
 
-const props = defineProps({ index: Number })
+const props = defineProps<{ index: number }>()
 const store = useGameStore()
 
 const space = computed(() => SPACES[props.index])
@@ -53,7 +53,7 @@ const colorBar = computed(() => {
 })
 
 const playersHere = computed(() => {
-  const result = []
+  const result: number[] = []
   store.players.forEach((p, pi) => {
     if (!p.isBankrupt && p.position === props.index) result.push(pi)
   })

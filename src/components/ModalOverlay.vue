@@ -11,7 +11,7 @@
           <template v-if="!canAffordBuy"><br><em class="cant-afford">You can't afford this!</em></template>
         </p>
         <div class="btn-group">
-          <button class="btn-yes" :disabled="!canAffordBuy" @click="store.buyProperty(store.modal.payload.si)">Buy - ${{ buySpace.price }}</button>
+          <button class="btn-yes" :disabled="!canAffordBuy" @click="store.buyProperty(modalSi)">Buy - ${{ buySpace.price }}</button>
           <button class="btn-no" @click="store.declineBuy()">Pass</button>
         </div>
       </template>
@@ -30,11 +30,11 @@
         <h2>{{ infoSpace.name }}</h2>
         <div v-if="infoSpace.type === 'property'" class="info-body">
           <p>
-            <span :style="{ color: GROUPS[infoSpace.group].color }">&block;&block;&block;</span> {{ infoSpace.group }} group<br>
-            Price: ${{ infoSpace.price }} | House cost: ${{ GROUPS[infoSpace.group].houseCost }}<br>
-            <strong>Rent:</strong> ${{ infoSpace.rent[0] }}
-            <template v-for="h in 4" :key="h"> | {{ h }}H: ${{ infoSpace.rent[h] }}</template>
-             | Hotel: ${{ infoSpace.rent[5] }}
+            <span :style="{ color: infoGroupColor }">&block;&block;&block;</span> {{ infoSpace.group }} group<br>
+            Price: ${{ infoSpace.price }} | House cost: ${{ infoHouseCost }}<br>
+            <strong>Rent:</strong> ${{ infoRent[0] }}
+            <template v-for="h in 4" :key="h"> | {{ h }}H: ${{ infoRent[h] }}</template>
+             | Hotel: ${{ infoRent[5] }}
             <template v-if="infoProp">
               <br><br><strong>Owner:</strong> {{ store.players[infoProp.owner].name }}
               <br><strong>Houses:</strong> {{ infoProp.houses === 5 ? 'Hotel' : infoProp.houses }}
@@ -79,11 +79,11 @@
       <template v-if="store.modal.type === 'card'">
         <h2 class="card-title">&#10024; Fortune Card</h2>
         <div class="card-display">
-          <div class="card-name">{{ store.modal.payload.card?.title }}</div>
-          <div class="card-desc">{{ store.modal.payload.card?.desc }}</div>
+          <div class="card-name">{{ modalCard?.title }}</div>
+          <div class="card-desc">{{ modalCard?.desc }}</div>
         </div>
         <div class="btn-group">
-          <button class="btn-opt" @click="store.closeModal(); store.executeCard(store.modal.payload.pi, store.modal.payload.card)">OK</button>
+          <button class="btn-opt" @click="store.closeModal(); store.executeCard(modalPi, modalCard!)">OK</button>
         </div>
       </template>
 
@@ -128,7 +128,7 @@
                 :max="store.players[0].money"
                 step="10"
                 class="cash-input"
-                @change="store.updateTradeMyCash($event.target.value)"
+                @change="onMyCashChange($event)"
               >
             </div>
           </div>
@@ -149,7 +149,7 @@
                 :max="store.players[store.tradeState.partner].money"
                 step="10"
                 class="cash-input"
-                @change="store.updateTradeTheirCash($event.target.value)"
+                @change="onTheirCashChange($event)"
               >
             </div>
           </div>
@@ -201,24 +201,32 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game'
 import { SPACES, GROUPS, PLAYER_COLORS, CARDS } from '../data'
+import type { Space, Card } from '../types'
 
 const store = useGameStore()
 
 const currentPlayer = computed(() => store.players[store.currentPlayer])
-const buySpace = computed(() => SPACES[store.modal.payload.si] || {})
-const canAffordBuy = computed(() => currentPlayer.value && currentPlayer.value.money >= (buySpace.value.price || 0))
+const modalSi = computed(() => store.modal.payload.si as number)
+const buySpace = computed((): Space => SPACES[modalSi.value] ?? { name: '', type: 'go' })
+const canAffordBuy = computed(() => currentPlayer.value && currentPlayer.value.money >= (buySpace.value.price ?? 0))
 
-const infoSpace = computed(() => SPACES[store.modal.payload.si] || {})
-const infoProp = computed(() => store.properties[store.modal.payload.si])
+const infoSpace = computed((): Space => SPACES[modalSi.value] ?? { name: '', type: 'go' })
+const infoProp = computed(() => store.properties[modalSi.value])
+const infoGroupColor = computed(() => infoSpace.value.group ? GROUPS[infoSpace.value.group].color : '')
+const infoHouseCost = computed(() => infoSpace.value.group ? GROUPS[infoSpace.value.group].houseCost : 0)
+const infoRent = computed(() => infoSpace.value.rent ?? [])
 
-const isWide = computed(() => ['tradeUI', 'aiTradeProposal'].includes(store.modal.type))
+const modalCard = computed(() => store.modal.payload.card as Card | undefined)
+const modalPi = computed(() => store.modal.payload.pi as number)
+
+const isWide = computed(() => store.modal.type === 'tradeUI' || store.modal.type === 'aiTradeProposal')
 
 const tradeMyProps = computed(() => store.getTradeableProperties(0))
-function tradePartnerProps(i) { return store.getTradeableProperties(i) }
+function tradePartnerProps(i: number) { return store.getTradeableProperties(i) }
 const tradePartnerTradeProps = computed(() => store.tradeState ? store.getTradeableProperties(store.tradeState.partner) : [])
 
 const hasTradePartner = computed(() => {
@@ -228,11 +236,19 @@ const hasTradePartner = computed(() => {
   })
 })
 
-function propColor(si) {
+function propColor(si: number): string {
   const sp = SPACES[si]
   if (sp.group) return GROUPS[sp.group].color
   if (sp.type === 'railroad') return '#555'
   return '#999'
+}
+
+function onMyCashChange(e: Event) {
+  store.updateTradeMyCash((e.target as HTMLInputElement).value)
+}
+
+function onTheirCashChange(e: Event) {
+  store.updateTradeTheirCash((e.target as HTMLInputElement).value)
 }
 </script>
 

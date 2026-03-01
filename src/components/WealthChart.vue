@@ -10,13 +10,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useGameStore } from '../stores/game'
 import { PLAYER_COLORS } from '../data'
 
 const store = useGameStore()
-const canvasRef = ref(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 function drawChart() {
   const canvas = canvasRef.value
@@ -34,6 +34,7 @@ function drawChart() {
   const data = [...hist, { round: liveRound, totalCash: liveCash, players: livePlayers }]
 
   const ctx = canvas.getContext('2d')
+  if (!ctx) return
   const dpr = window.devicePixelRatio || 1
   const rect = canvas.getBoundingClientRect()
   canvas.width = rect.width * dpr
@@ -56,8 +57,8 @@ function drawChart() {
   maxVal = Math.ceil(maxVal / 500) * 500 || 1500
 
   const xStep = data.length > 1 ? cw / (data.length - 1) : cw
-  const toX = i => ml + (data.length > 1 ? i * xStep : cw / 2)
-  const toY = v => mt + ch - (v / maxVal) * ch
+  const toX = (i: number) => ml + (data.length > 1 ? i * xStep : cw / 2)
+  const toY = (v: number) => mt + ch - (v / maxVal) * ch
 
   ctx.strokeStyle = '#2a2a44'
   ctx.lineWidth = 1
@@ -90,7 +91,7 @@ function drawChart() {
   ctx.beginPath()
   data.forEach((d, i) => {
     const x = toX(i), y = toY(d.totalCash)
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
   })
   ctx.stroke()
   ctx.setLineDash([])

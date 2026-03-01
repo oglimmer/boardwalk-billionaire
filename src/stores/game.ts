@@ -1,9 +1,35 @@
 import { defineStore } from 'pinia'
 import { markRaw } from 'vue'
-import { SPACES, GROUPS, RAILROAD_SPACES, UTILITY_SPACES, PLAYER_COLORS, CARDS } from '../data.js'
+import { SPACES, GROUPS, RAILROAD_SPACES, UTILITY_SPACES, CARDS } from '../data'
+import type {
+  Player, OwnedProperty, ModalType, Modal, BuildPanel, TradeState,
+  PendingAiTrade, WealthRecord, PlayerWealthDetail, Card, GroupName,
+} from '../types'
+
+interface GameState {
+  players: Player[]
+  currentPlayer: number
+  properties: Record<number, OwnedProperty>
+  doublesCount: number
+  phase: 'roll' | 'postRoll'
+  lastDice: [number, number]
+  gameOver: boolean
+  turnCounter: number
+  lastTradeAttempt: Record<number, number>
+  pendingAiTradeResume: (() => void) | null
+  pendingAiTrade: PendingAiTrade | null
+  tradeState: TradeState | null
+  wealthHistory: WealthRecord[]
+  cardDeck: number[]
+  logEntries: string[]
+  centerInfo: string
+  activeLogTab: string
+  modal: Modal
+  buildPanel: BuildPanel
+}
 
 export const useGameStore = defineStore('game', {
-  state: () => ({
+  state: (): GameState => ({
     players: [],
     currentPlayer: 0,
     properties: {},
@@ -26,37 +52,37 @@ export const useGameStore = defineStore('game', {
   }),
 
   getters: {
-    isHumanTurn: (state) => {
+    isHumanTurn: (state): boolean => {
       if (!state.players.length) return false
       return state.players[state.currentPlayer].isHuman && !state.gameOver
     },
-    canRoll: (state) => {
+    canRoll: (state): boolean => {
       if (!state.players.length) return false
       const p = state.players[state.currentPlayer]
       return p.isHuman && !state.gameOver && state.phase === 'roll'
     },
-    canEndTurn: (state) => {
+    canEndTurn: (state): boolean => {
       if (!state.players.length) return false
       const p = state.players[state.currentPlayer]
       return p.isHuman && !state.gameOver && state.phase === 'postRoll'
     },
-    canBuildOrTrade: (state) => {
+    canBuildOrTrade: (state): boolean => {
       if (!state.players.length) return false
       const p = state.players[state.currentPlayer]
       return p.isHuman && !state.gameOver && (state.phase === 'postRoll' || state.phase === 'roll')
     },
-    getPlayerWealth: (state) => (pi) => {
-      let cash = state.players[pi].money
+    getPlayerWealth: (state) => (pi: number): PlayerWealthDetail => {
+      const cash = state.players[pi].money
       let propValue = 0
       let buildValue = 0
       let mortgageDebt = 0
       for (const [si, prop] of Object.entries(state.properties)) {
         if (prop.owner !== pi) continue
-        const sp = SPACES[si]
+        const sp = SPACES[Number(si)]
         if (prop.mortgaged) {
-          mortgageDebt += Math.floor(sp.price / 2)
+          mortgageDebt += Math.floor(sp.price! / 2)
         } else {
-          propValue += sp.price
+          propValue += sp.price!
         }
         if (prop.houses > 0 && sp.group) {
           buildValue += prop.houses * GROUPS[sp.group].houseCost
@@ -67,7 +93,7 @@ export const useGameStore = defineStore('game', {
   },
 
   actions: {
-    log(msg) {
+    log(msg: string) {
       this.logEntries.unshift(msg)
     },
 
@@ -103,7 +129,7 @@ export const useGameStore = defineStore('game', {
     },
 
     // === Modal ===
-    showModal(type, payload = {}) {
+    showModal(type: ModalType, payload: Record<string, unknown> = {}) {
       this.modal = { visible: true, type, payload }
     },
     closeModal() {
@@ -119,9 +145,9 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    drawFortuneCard(pi) {
+    drawFortuneCard(pi: number) {
       if (this.cardDeck.length === 0) this.shuffleCardDeck()
-      const cardIdx = this.cardDeck.pop()
+      const cardIdx = this.cardDeck.pop()!
       const card = CARDS[cardIdx]
       const p = this.players[pi]
       this.log(`${p.name} draws Fortune: "${card.title}"`)
@@ -132,15 +158,15 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    executeCard(pi, card) {
+    executeCard(pi: number, card: Card) {
       const p = this.players[pi]
       switch (card.effect) {
         case 'collect':
-          p.money += card.amount
+          p.money += card.amount!
           this.log(`${p.name} collects $${card.amount}.`)
           break
         case 'pay':
-          p.money -= card.amount
+          p.money -= card.amount!
           this.log(`${p.name} pays $${card.amount}.`)
           this.checkBankrupt(pi)
           break
@@ -148,8 +174,8 @@ export const useGameStore = defineStore('game', {
           let collected = 0
           this.players.forEach((other, oi) => {
             if (oi !== pi && !other.isBankrupt) {
-              other.money -= card.amount
-              collected += card.amount
+              other.money -= card.amount!
+              collected += card.amount!
               this.checkBankrupt(oi)
             }
           })
@@ -163,7 +189,7 @@ export const useGameStore = defineStore('game', {
           this.log(`${p.name} goes to Lockup!`)
           break
         case 'advance_to': {
-          const target = card.position
+          const target = card.position!
           const oldPos = p.position
           if (target < oldPos) {
             p.money += 200
@@ -174,7 +200,7 @@ export const useGameStore = defineStore('game', {
           return
         }
         case 'go_back': {
-          let newPos = p.position - card.amount
+          let newPos = p.position - card.amount!
           if (newPos < 0) newPos += 40
           p.position = newPos
           this.log(`${p.name} goes back ${card.amount} spaces to ${SPACES[newPos].name}.`)
@@ -184,7 +210,7 @@ export const useGameStore = defineStore('game', {
         case 'nearest_railroad': {
           const pos = p.position
           let target = RAILROAD_SPACES.find(r => r > pos)
-          if (!target && target !== 0) target = RAILROAD_SPACES[0]
+          if (target === undefined) target = RAILROAD_SPACES[0]
           const oldPos = p.position
           if (target < oldPos) {
             p.money += 200
@@ -199,7 +225,7 @@ export const useGameStore = defineStore('game', {
             this.log(`${p.name} pays double rent: $${doubleRent} to ${this.players[prop.owner].name}!`)
             p.money -= doubleRent
             this.players[prop.owner].money += doubleRent
-            this.checkBankrupt(pi, prop.owner)
+            this.checkBankrupt(pi)
           } else if (!prop) {
             if (p.isHuman) { this.showModal('buy', { si: target }); return }
             else { this.aiDecideBuy(pi, target); return }
@@ -208,10 +234,10 @@ export const useGameStore = defineStore('game', {
         }
         case 'repairs': {
           let cost = 0
-          for (const [si, prop] of Object.entries(this.properties)) {
+          for (const [, prop] of Object.entries(this.properties)) {
             if (prop.owner !== pi) continue
-            if (prop.houses === 5) cost += card.perHotel
-            else if (prop.houses > 0) cost += prop.houses * card.perHouse
+            if (prop.houses === 5) cost += card.perHotel!
+            else if (prop.houses > 0) cost += prop.houses * card.perHouse!
           }
           if (cost > 0) {
             p.money -= cost
@@ -262,7 +288,7 @@ export const useGameStore = defineStore('game', {
       this.movePlayer(this.currentPlayer, total)
     },
 
-    handleJailRoll(d1, d2, isDoubles) {
+    handleJailRoll(d1: number, d2: number, isDoubles: boolean) {
       const p = this.players[this.currentPlayer]
       p.jailTurns++
       if (isDoubles) {
@@ -291,7 +317,7 @@ export const useGameStore = defineStore('game', {
       if (!p.isHuman) setTimeout(() => this.aiPostRoll(), 800)
     },
 
-    movePlayer(pi, steps) {
+    movePlayer(pi: number, steps: number) {
       const p = this.players[pi]
       const oldPos = p.position
       const newPos = (oldPos + steps) % 40
@@ -307,7 +333,7 @@ export const useGameStore = defineStore('game', {
       this.handleLanding(pi)
     },
 
-    handleLanding(pi) {
+    handleLanding(pi: number) {
       const p = this.players[pi]
       const sp = SPACES[p.position]
       const si = p.position
@@ -336,7 +362,7 @@ export const useGameStore = defineStore('game', {
       }
       if (sp.type === 'tax') {
         this.log(`${p.name} pays $${sp.amount} tax.`)
-        p.money -= sp.amount
+        p.money -= sp.amount!
         this.checkBankrupt(pi)
         this.phase = 'postRoll'
         if (this.lastDice[0] === this.lastDice[1] && !p.inJail && this.doublesCount > 0 && p.isHuman) this.phase = 'roll'
@@ -369,13 +395,13 @@ export const useGameStore = defineStore('game', {
       this.log(`${p.name} pays $${rent} rent to ${owner.name} for ${sp.name}.`)
       p.money -= rent
       owner.money += rent
-      this.checkBankrupt(pi, prop.owner)
+      this.checkBankrupt(pi)
       this.phase = 'postRoll'
       if (this.lastDice[0] === this.lastDice[1] && !p.inJail && this.doublesCount > 0 && p.isHuman && !p.isBankrupt) this.phase = 'roll'
       if (!p.isHuman) setTimeout(() => this.aiPostRoll(), 600)
     },
 
-    calculateRent(si, diceTotal) {
+    calculateRent(si: number, diceTotal: number): number {
       const sp = SPACES[si]
       const prop = this.properties[si]
       if (!prop || prop.mortgaged) return 0
@@ -387,28 +413,28 @@ export const useGameStore = defineStore('game', {
         const count = UTILITY_SPACES.filter(u => this.properties[u] && this.properties[u].owner === prop.owner).length
         return (count === 1 ? 4 : 10) * diceTotal
       }
-      if (prop.houses > 0) return sp.rent[prop.houses]
-      const group = GROUPS[sp.group]
+      if (prop.houses > 0) return sp.rent![prop.houses]
+      const group = GROUPS[sp.group as GroupName]
       const hasMonopoly = group.members.every(m => this.properties[m] && this.properties[m].owner === prop.owner)
-      return hasMonopoly ? sp.rent[0] * 2 : sp.rent[0]
+      return hasMonopoly ? sp.rent![0] * 2 : sp.rent![0]
     },
 
-    goToJail(pi) {
+    goToJail(pi: number) {
       this.players[pi].position = 10
       this.players[pi].inJail = true
       this.players[pi].jailTurns = 0
     },
 
-    checkBankrupt(pi, creditor) {
+    checkBankrupt(pi: number) {
       const p = this.players[pi]
       if (p.money >= 0) return
       if (this.autoMortgage(pi)) return
       p.isBankrupt = true
       this.log(`${p.name} is BANKRUPT!`)
       for (const [si, prop] of Object.entries(this.properties)) {
-        if (prop.owner === pi) delete this.properties[si]
+        if (prop.owner === pi) delete this.properties[Number(si)]
       }
-      const alive = this.players.filter(p => !p.isBankrupt)
+      const alive = this.players.filter(pl => !pl.isBankrupt)
       if (alive.length === 1) {
         this.gameOver = true
         this.log(`${alive[0].name} WINS THE GAME!`)
@@ -417,16 +443,16 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    autoMortgage(pi) {
+    autoMortgage(pi: number): boolean {
       const p = this.players[pi]
       while (p.money < 0) {
         let found = false
         for (const [si, prop] of Object.entries(this.properties)) {
           if (prop.owner === pi && !prop.mortgaged && prop.houses === 0) {
-            const val = Math.floor(SPACES[si].price / 2)
+            const val = Math.floor(SPACES[Number(si)].price! / 2)
             prop.mortgaged = true
             p.money += val
-            this.log(`${p.name} mortgages ${SPACES[si].name} for $${val}.`)
+            this.log(`${p.name} mortgages ${SPACES[Number(si)].name} for $${val}.`)
             found = true
             break
           }
@@ -434,8 +460,8 @@ export const useGameStore = defineStore('game', {
         if (!found) {
           for (const [si, prop] of Object.entries(this.properties)) {
             if (prop.owner === pi && prop.houses > 0) {
-              const sp = SPACES[si]
-              const hCost = GROUPS[sp.group].houseCost
+              const sp = SPACES[Number(si)]
+              const hCost = GROUPS[sp.group as GroupName].houseCost
               const sellVal = Math.floor(hCost / 2)
               prop.houses--
               p.money += sellVal
@@ -479,10 +505,10 @@ export const useGameStore = defineStore('game', {
     },
 
     // === Buy ===
-    buyProperty(si) {
+    buyProperty(si: number) {
       const sp = SPACES[si]
       const p = this.players[this.currentPlayer]
-      p.money -= sp.price
+      p.money -= sp.price!
       this.properties[si] = { owner: this.currentPlayer, houses: 0, mortgaged: false }
       this.log(`${p.name} bought ${sp.name} for $${sp.price}.`)
       this.closeModal()
@@ -519,9 +545,9 @@ export const useGameStore = defineStore('game', {
       this.buildPanel = { visible: false, mode: null }
     },
 
-    humanBuild(si) {
+    humanBuild(si: number) {
       const sp = SPACES[si]
-      const group = GROUPS[sp.group]
+      const group = GROUPS[sp.group as GroupName]
       const p = this.players[this.currentPlayer]
       if (p.money < group.houseCost) return
       this.properties[si].houses++
@@ -530,9 +556,9 @@ export const useGameStore = defineStore('game', {
       this.log(`You build ${label} on ${sp.name} ($${group.houseCost}).`)
     },
 
-    humanSellHouse(si) {
+    humanSellHouse(si: number) {
       const sp = SPACES[si]
-      const group = GROUPS[sp.group]
+      const group = GROUPS[sp.group as GroupName]
       const p = this.players[this.currentPlayer]
       const sellVal = Math.floor(group.houseCost / 2)
       this.properties[si].houses--
@@ -540,17 +566,17 @@ export const useGameStore = defineStore('game', {
       this.log(`You sell a house on ${sp.name} for $${sellVal}.`)
     },
 
-    humanMortgage(si) {
+    humanMortgage(si: number) {
       const sp = SPACES[si]
-      const val = Math.floor(sp.price / 2)
+      const val = Math.floor(sp.price! / 2)
       this.properties[si].mortgaged = true
       this.players[this.currentPlayer].money += val
       this.log(`You mortgage ${sp.name} for $${val}.`)
     },
 
-    humanUnmortgage(si) {
+    humanUnmortgage(si: number) {
       const sp = SPACES[si]
-      const cost = Math.floor(sp.price / 2 * 1.1)
+      const cost = Math.floor(sp.price! / 2 * 1.1)
       if (this.players[this.currentPlayer].money < cost) return
       this.properties[si].mortgaged = false
       this.players[this.currentPlayer].money -= cost
@@ -570,7 +596,7 @@ export const useGameStore = defineStore('game', {
     },
 
     // === Wealth tracking ===
-    recordWealth(round) {
+    recordWealth(round: number) {
       const pData = this.players.map((p, i) => {
         const w = this.getPlayerWealth(i)
         return { cash: p.isBankrupt ? 0 : w.cash, total: p.isBankrupt ? 0 : w.total }
@@ -581,7 +607,7 @@ export const useGameStore = defineStore('game', {
     },
 
     // === Trade ===
-    canTradeProperty(si) {
+    canTradeProperty(si: number): boolean {
       const prop = this.properties[si]
       if (!prop) return false
       if (prop.houses > 0) return false
@@ -595,17 +621,17 @@ export const useGameStore = defineStore('game', {
       return true
     },
 
-    getTradeableProperties(pi) {
-      const result = []
+    getTradeableProperties(pi: number): number[] {
+      const result: number[] = []
       for (const [si, prop] of Object.entries(this.properties)) {
         if (prop.owner === pi && this.canTradeProperty(parseInt(si))) result.push(parseInt(si))
       }
       return result
     },
 
-    getPropertyStrategicValue(si, forPlayer) {
+    getPropertyStrategicValue(si: number, forPlayer: number): number {
       const sp = SPACES[si]
-      let value = sp.price
+      let value = sp.price!
       if (sp.group) {
         const group = GROUPS[sp.group]
         const owned = group.members.filter(m => this.properties[m] && this.properties[m].owner === forPlayer).length
@@ -628,22 +654,22 @@ export const useGameStore = defineStore('game', {
       this.showModal('tradeSelect', {})
     },
 
-    selectTradePartner(pi) {
+    selectTradePartner(pi: number) {
       this.tradeState = { partner: pi, myProps: new Set(), theirProps: new Set(), myCash: 0, theirCash: 0 }
       this.showModal('tradeUI', {})
     },
 
-    toggleTradeProp(side, si) {
-      const set = side === 'my' ? this.tradeState.myProps : this.tradeState.theirProps
+    toggleTradeProp(side: 'my' | 'their', si: number) {
+      const set = side === 'my' ? this.tradeState!.myProps : this.tradeState!.theirProps
       if (set.has(si)) set.delete(si); else set.add(si)
     },
 
-    updateTradeMyCash(value) {
-      this.tradeState.myCash = Math.max(0, Math.min(this.players[0].money, parseInt(value) || 0))
+    updateTradeMyCash(value: string) {
+      this.tradeState!.myCash = Math.max(0, Math.min(this.players[0].money, parseInt(value) || 0))
     },
 
-    updateTradeTheirCash(value) {
-      this.tradeState.theirCash = Math.max(0, Math.min(this.players[this.tradeState.partner].money, parseInt(value) || 0))
+    updateTradeTheirCash(value: string) {
+      this.tradeState!.theirCash = Math.max(0, Math.min(this.players[this.tradeState!.partner].money, parseInt(value) || 0))
     },
 
     closeTradeModal() {
@@ -652,21 +678,21 @@ export const useGameStore = defineStore('game', {
     },
 
     submitHumanTrade() {
-      const myProps = Array.from(this.tradeState.myProps)
-      const theirProps = Array.from(this.tradeState.theirProps)
-      if (myProps.length === 0 && theirProps.length === 0 && this.tradeState.myCash === 0 && this.tradeState.theirCash === 0) return
+      const myProps = Array.from(this.tradeState!.myProps)
+      const theirProps = Array.from(this.tradeState!.theirProps)
+      if (myProps.length === 0 && theirProps.length === 0 && this.tradeState!.myCash === 0 && this.tradeState!.theirCash === 0) return
 
-      const accepted = this.aiWouldAcceptTrade(this.tradeState.partner, myProps, theirProps, this.tradeState.myCash, this.tradeState.theirCash, 0)
+      const accepted = this.aiWouldAcceptTrade(this.tradeState!.partner, myProps, theirProps, this.tradeState!.myCash, this.tradeState!.theirCash, 0)
       if (accepted) {
-        this.executeTrade(0, this.tradeState.partner, myProps, theirProps, this.tradeState.myCash, this.tradeState.theirCash)
-        this.log(`${this.players[this.tradeState.partner].name} accepted your trade!`)
+        this.executeTrade(0, this.tradeState!.partner, myProps, theirProps, this.tradeState!.myCash, this.tradeState!.theirCash)
+        this.log(`${this.players[this.tradeState!.partner].name} accepted your trade!`)
         this.closeTradeModal()
       } else {
-        this.showModal('tradeRejected', { partnerName: this.players[this.tradeState.partner].name })
+        this.showModal('tradeRejected', { partnerName: this.players[this.tradeState!.partner].name })
       }
     },
 
-    executeTrade(fromPlayer, toPlayer, fromProps, toProps, fromCash, toCash) {
+    executeTrade(fromPlayer: number, toPlayer: number, fromProps: number[], toProps: number[], fromCash: number, toCash: number) {
       fromProps.forEach(si => { this.properties[si].owner = toPlayer })
       toProps.forEach(si => { this.properties[si].owner = fromPlayer })
       this.players[fromPlayer].money -= fromCash
@@ -733,24 +759,24 @@ export const useGameStore = defineStore('game', {
       this.rollDice()
     },
 
-    aiDecideBuy(pi, si) {
+    aiDecideBuy(pi: number, si: number) {
       const sp = SPACES[si]
       const p = this.players[pi]
       const buffer = 200
-      let wantsToBuy = p.money >= sp.price + buffer
+      let wantsToBuy = p.money >= sp.price! + buffer
 
       if (sp.group) {
         const group = GROUPS[sp.group]
         const owned = group.members.filter(m => this.properties[m] && this.properties[m].owner === pi).length
         if (owned === group.members.length - 1) {
-          wantsToBuy = p.money >= sp.price + 50
+          wantsToBuy = p.money >= sp.price! + 50
         }
       }
-      if ((sp.type === 'railroad' || sp.type === 'utility') && p.money >= sp.price + 100) {
+      if ((sp.type === 'railroad' || sp.type === 'utility') && p.money >= sp.price! + 100) {
         wantsToBuy = true
       }
       if (wantsToBuy) {
-        p.money -= sp.price
+        p.money -= sp.price!
         this.properties[si] = { owner: pi, houses: 0, mortgaged: false }
         this.log(`${p.name} bought ${sp.name} for $${sp.price}.`)
       } else {
@@ -766,7 +792,7 @@ export const useGameStore = defineStore('game', {
       this.aiUnmortgage(this.currentPlayer)
       const tradePaused = this.aiConsiderTrades(this.currentPlayer)
       if (tradePaused) {
-        this.pendingAiTradeResume = markRaw(() => this.finishAiPostRoll())
+        this.pendingAiTradeResume = markRaw(() => this.finishAiPostRoll()) as unknown as () => void
         return
       }
       this.finishAiPostRoll()
@@ -781,12 +807,12 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    aiBuild(pi) {
+    aiBuild(pi: number) {
       const p = this.players[pi]
       let built = true
       while (built) {
         built = false
-        for (const [groupName, group] of Object.entries(GROUPS)) {
+        for (const [, group] of Object.entries(GROUPS)) {
           const hasMonopoly = group.members.every(m => this.properties[m] && this.properties[m].owner === pi && !this.properties[m].mortgaged)
           if (!hasMonopoly) continue
           let minHouses = 5
@@ -809,26 +835,26 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    aiUnmortgage(pi) {
+    aiUnmortgage(pi: number) {
       const p = this.players[pi]
       for (const [si, prop] of Object.entries(this.properties)) {
         if (prop.owner === pi && prop.mortgaged) {
-          const cost = Math.floor(SPACES[si].price / 2 * 1.1)
+          const cost = Math.floor(SPACES[Number(si)].price! / 2 * 1.1)
           if (p.money >= cost + 200) {
             prop.mortgaged = false
             p.money -= cost
-            this.log(`${p.name} unmortgages ${SPACES[si].name} for $${cost}.`)
+            this.log(`${p.name} unmortgages ${SPACES[Number(si)].name} for $${cost}.`)
           }
         }
       }
     },
 
-    aiConsiderTrades(pi) {
+    aiConsiderTrades(pi: number): boolean {
       const p = this.players[pi]
       if (p.isBankrupt || p.money < 100) return false
       if (this.lastTradeAttempt[pi] && this.turnCounter - this.lastTradeAttempt[pi] < 5) return false
 
-      for (const [groupName, group] of Object.entries(GROUPS)) {
+      for (const [, group] of Object.entries(GROUPS)) {
         const aiOwned = group.members.filter(m => this.properties[m] && this.properties[m].owner === pi)
         if (aiOwned.length !== group.members.length - 1) continue
         const missing = group.members.find(m => !(this.properties[m] && this.properties[m].owner === pi))
@@ -882,7 +908,7 @@ export const useGameStore = defineStore('game', {
       return false
     },
 
-    aiWouldAcceptTrade(aiPlayer, propsFromHuman, propsFromAi, cashFromHuman, cashFromAi, proposer) {
+    aiWouldAcceptTrade(aiPlayer: number, propsFromHuman: number[], propsFromAi: number[], cashFromHuman: number, cashFromAi: number, proposer: number): boolean {
       let receiveVal = cashFromHuman
       let giveVal = cashFromAi
       propsFromHuman.forEach(si => { receiveVal += this.getPropertyStrategicValue(si, aiPlayer) })
@@ -890,7 +916,7 @@ export const useGameStore = defineStore('game', {
 
       let opponentGetsMonopoly = false
       let aiGetsMonopoly = false
-      for (const [gn, group] of Object.entries(GROUPS)) {
+      for (const [, group] of Object.entries(GROUPS)) {
         const oppComplete = group.members.every(m => {
           if (propsFromAi.includes(m)) return true
           if (propsFromHuman.includes(m)) return false
@@ -914,7 +940,7 @@ export const useGameStore = defineStore('game', {
     },
 
     // === Space Info ===
-    showSpaceInfo(si) {
+    showSpaceInfo(si: number) {
       this.showModal('spaceInfo', { si })
     },
   },
