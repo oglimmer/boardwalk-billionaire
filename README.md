@@ -1,6 +1,6 @@
 # Boardwalk Billionaire
 
-A fully playable digital property trading board game built with vanilla HTML, CSS, and JavaScript — no dependencies, no build step.
+A fully playable digital property trading board game built with Vue 3, TypeScript, and Pinia.
 
 Play as a human against 3 AI opponents on a classic 40-space board.
 
@@ -15,16 +15,9 @@ Play as a human against 3 AI opponents on a classic 40-space board.
 
 ## Getting Started
 
-Open `index.html` in any modern web browser. No installation or build step required.
-
 ```sh
-open index.html
-```
-
-Or serve it locally:
-
-```sh
-npx serve .
+npm install
+npm run dev
 ```
 
 ### Docker
@@ -45,12 +38,19 @@ Then open [http://localhost:8080](http://localhost:8080).
 5. Manage cash flow with the **Mortgage** panel
 6. Last player standing wins
 
+## Scripts
+
+- `npm run dev` — start Vite dev server
+- `npm run build` — type-check and build for production
+- `npm run type-check` — run TypeScript type checking
+- `npm run lint` — run ESLint
+
 ## Tech Stack
 
-- Vanilla JavaScript (ES6+)
-- HTML5 + CSS3
-- Zero external dependencies
-- Single-file architecture (~1,850 lines)
+- Vue 3 with `<script setup>` and TypeScript
+- Pinia for state management
+- Vite for bundling
+- ESLint with Vue + TypeScript support
 
 ## License
 
