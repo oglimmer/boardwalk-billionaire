@@ -4,36 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Boardwalk Billionaire</title>
-<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="game">
-  <div id="board"></div>
-  <div id="sidebar">
-    <div id="players"></div>
-    <div id="controls">
-      <button id="btn-roll">Roll Dice</button>
-      <button id="btn-build">Build Houses</button>
-      <button id="btn-mortgage">Mortgage</button>
-      <button id="btn-trade">Trade</button>
-      <button id="btn-end-turn" disabled>End Turn</button>
-    </div>
-    <div id="build-panel"></div>
-    <div id="log-container">
-      <div class="log-tabs">
-        <button class="log-tab active" data-tab="log">Log</button>
-        <button class="log-tab" data-tab="stats">Stats</button>
-        <button class="log-tab" data-tab="chart">History</button>
-      </div>
-      <div id="log"></div>
-      <div id="stats"></div>
-      <div id="chart"><canvas id="chart-canvas" height="260"></canvas>
-        <div class="chart-legend" id="chart-legend"></div>
-      </div>
-    </div>
-  </div>
-</div>
-<div id="modal-overlay"><div id="modal"></div></div>
-<script type="module" src="js/main.js"></script>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>
