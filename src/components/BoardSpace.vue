@@ -15,7 +15,7 @@
         :key="pi"
         class="token"
         :style="{ background: PLAYER_COLORS[pi] }"
-      >{{ pi === 0 ? 'Y' : '' }}</div>
+      >{{ ['Y','B','G','D'][pi] }}</div>
     </div>
     <div class="houses">
       <template v-if="prop && prop.houses > 0 && prop.houses < 5">
@@ -67,8 +67,8 @@ const playersHere = computed(() => {
 .color-bar { height: 8px; margin: -2px -2px 1px -2px; flex-shrink: 0; }
 .name { font-weight: bold; line-height: 1.1; flex-grow: 1; font-size: 7px; }
 .price { font-size: 7px; color: #aaa; }
-.tokens { display: flex; gap: 1px; flex-wrap: wrap; position: absolute; bottom: 1px; right: 1px; }
-.token { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); font-size: 6px; display: flex; align-items: center; justify-content: center; }
+.tokens { display: flex; gap: 2px; flex-wrap: wrap; position: absolute; bottom: 2px; right: 2px; }
+.token { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); font-size: 9px; font-weight: bold; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.5); text-shadow: 0 1px 1px rgba(0,0,0,0.5); }
 .houses { display: flex; gap: 1px; position: absolute; bottom: 1px; left: 1px; }
 .house { width: 6px; height: 6px; background: #2ecc71; border: 1px solid #27ae60; }
 .hotel { width: 8px; height: 8px; background: #e74c3c; border: 1px solid #c0392b; }
