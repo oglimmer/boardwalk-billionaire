@@ -45,4 +45,8 @@ onUnmounted(() => {
 
 <style scoped>
 .game { display: flex; gap: 16px; transform-origin: center center; }
+
+@media (max-width: 768px) {
+  .game { flex-direction: column; align-items: center; }
+}
 </style>
