@@ -18,5 +18,5 @@ const store = useGameStore()
 </script>
 
 <style scoped>
-.sidebar { width: 320px; display: flex; flex-direction: column; gap: 10px; }
+.sidebar { width: 320px; height: calc(62px * 11 + 1px * 10 + 4px); display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 </style>

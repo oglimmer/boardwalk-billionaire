@@ -73,7 +73,7 @@ const barWidths = computed(() => {
 </script>
 
 <style scoped>
-.stats { padding: 10px; overflow-y: auto; max-height: 300px; }
+.stats { padding: 10px; overflow-y: auto; flex: 1; min-height: 0; }
 .stat-header { font-size: 13px; font-weight: bold; color: #e94560; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #333; }
 .stat-total { font-size: 12px; color: #aaa; margin-bottom: 12px; }
 .cash-green { color: #2ecc71; }
