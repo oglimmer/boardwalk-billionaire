@@ -1,0 +1,44 @@
+replicaCount: 1
+
+backend:
+  image:
+    repository: registry.oglimmer.com/boardwalk-billionaire-be
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    JAVA_OPTS: "-Xmx384m"
+
+frontend:
+  image:
+    repository: registry.oglimmer.com/boardwalk-billionaire-fe
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "10m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"
+
+imagePullSecrets:
+  - name: oglimmerregistrykey
+
+ingress:
+  enabled: true
+  className: traefik
+  host: boardwalk-billionaire.oglimmer.com
+  tls:
+    secretName: tls-boardwalk-billionaire-ingress-dns
+    issuerName: oglimmer-com-dns
+
+serviceAccount:
+  create: false
+  name: ""

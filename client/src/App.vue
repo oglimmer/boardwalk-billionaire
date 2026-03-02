@@ -1,0 +1,70 @@
+<template>
+  <LobbyScreen v-if="lobby.screen === 'lobby'" />
+  <LobbyWaiting v-else-if="lobby.screen === 'waiting'" />
+  <template v-else>
+    <div class="game-container">
+      <div ref="gameRef" class="game">
+        <GameBoard />
+        <Sidebar />
+      </div>
+    </div>
+    <ModalOverlay />
+  </template>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useGameStore } from './stores/game'
+import { useLobbyStore } from './stores/lobby'
+import GameBoard from './components/GameBoard.vue'
+import Sidebar from './components/Sidebar.vue'
+import ModalOverlay from './components/ModalOverlay.vue'
+import LobbyScreen from './components/LobbyScreen.vue'
+import LobbyWaiting from './components/LobbyWaiting.vue'
+
+const store = useGameStore()
+const lobby = useLobbyStore()
+const gameRef = ref<HTMLDivElement | null>(null)
+
+function scaleGame() {
+  const el = gameRef.value
+  if (!el) return
+  // Reset to measure natural (unscaled) size
+  el.style.transform = 'translate(-50%, -50%)'
+  const nat = { w: el.offsetWidth, h: el.offsetHeight }
+  const padding = 32
+  const avail = { w: window.innerWidth - padding, h: window.innerHeight - padding }
+  const scale = Math.min(avail.w / nat.w, avail.h / nat.h)
+  el.style.transform = `translate(-50%, -50%) scale(${scale})`
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'j') store.payJailFee()
+}
+
+// Scale game when entering game screen
+watch(() => lobby.screen, (val) => {
+  if (val === 'game') {
+    setTimeout(scaleGame, 50)
+  }
+})
+
+onMounted(() => {
+  window.addEventListener('resize', scaleGame)
+  document.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', scaleGame)
+  document.removeEventListener('keydown', onKeydown)
+})
+</script>
+
+<style scoped>
+.game-container { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+.game { display: flex; gap: 16px; position: absolute; top: 50%; left: 50%; transform-origin: center center; }
+
+@media (max-width: 768px) {
+  .game { flex-direction: column; align-items: center; }
+}
+</style>

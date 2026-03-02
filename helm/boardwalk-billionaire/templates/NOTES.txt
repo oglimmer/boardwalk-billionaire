@@ -1,0 +1,8 @@
+Boardwalk Billionaire has been deployed!
+
+{{- if .Values.ingress.enabled }}
+Access the game at: https://{{ .Values.ingress.host }}
+{{- end }}
+
+Backend service: {{ include "boardwalk.fullname" . }}-backend:8080
+Frontend service: {{ include "boardwalk.fullname" . }}-frontend:80
