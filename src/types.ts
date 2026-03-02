@@ -45,7 +45,7 @@ export interface OwnedProperty {
   mortgaged: boolean
 }
 
-export type ModalType = 'buy' | 'win' | 'spaceInfo' | 'card' | 'tradeSelect' | 'tradeUI' | 'tradeRejected' | 'aiTradeProposal' | null
+export type ModalType = 'buy' | 'win' | 'spaceInfo' | 'card' | 'tradeSelect' | 'tradeUI' | 'tradeAccepted' | 'tradeRejected' | 'aiTradeProposal' | null
 
 export interface Modal {
   visible: boolean

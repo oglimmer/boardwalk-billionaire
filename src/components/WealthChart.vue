@@ -132,7 +132,7 @@ watch(
 </script>
 
 <style scoped>
-.chart { padding: 10px; }
+.chart { padding: 10px; flex: 1; overflow-y: auto; min-height: 0; }
 canvas { width: 100%; border-radius: 4px; }
 .chart-legend { display: flex; gap: 10px; font-size: 10px; color: #888; margin-top: 6px; justify-content: center; flex-wrap: wrap; }
 .chart-legend span { display: flex; align-items: center; gap: 3px; }

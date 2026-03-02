@@ -161,6 +161,15 @@
         </div>
       </template>
 
+      <!-- Trade Accepted -->
+      <template v-if="store.modal.type === 'tradeAccepted'">
+        <h2>Trade Accepted!</h2>
+        <p>{{ store.modal.payload.partnerName }} accepted your offer!</p>
+        <div class="btn-group">
+          <button class="btn-yes" @click="store.closeModal()">OK</button>
+        </div>
+      </template>
+
       <!-- Trade Rejected -->
       <template v-if="store.modal.type === 'tradeRejected'">
         <h2>Trade Rejected</h2>
@@ -264,7 +273,7 @@ p { margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
 .modal button { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
 .btn-yes { background: #2ecc71; color: white; }
 .btn-no { background: #e74c3c; color: white; }
-.btn-opt { background: #3498db; color: white; }
+.btn-opt { background: #8e44ad; color: white; }
 .cant-afford { color: #e74c3c; }
 .mortgaged-label { color: #f39c12; }
 .card-info { color: #9b59b6; }

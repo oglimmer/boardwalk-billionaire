@@ -684,9 +684,11 @@ export const useGameStore = defineStore('game', {
 
       const accepted = this.aiWouldAcceptTrade(this.tradeState!.partner, myProps, theirProps, this.tradeState!.myCash, this.tradeState!.theirCash, 0)
       if (accepted) {
+        const partnerName = this.players[this.tradeState!.partner].name
         this.executeTrade(0, this.tradeState!.partner, myProps, theirProps, this.tradeState!.myCash, this.tradeState!.theirCash)
-        this.log(`${this.players[this.tradeState!.partner].name} accepted your trade!`)
-        this.closeTradeModal()
+        this.log(`${partnerName} accepted your trade!`)
+        this.tradeState = null
+        this.showModal('tradeAccepted', { partnerName })
       } else {
         this.showModal('tradeRejected', { partnerName: this.players[this.tradeState!.partner].name })
       }
