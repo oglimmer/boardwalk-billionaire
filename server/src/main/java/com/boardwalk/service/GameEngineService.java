@@ -163,6 +163,7 @@ public class GameEngineService {
             state.log("Doubles! Roll again.");
             state.setPhase(GamePhase.ROLL);
         }
+        advanceIfCurrentPlayerBankrupt(state);
     }
 
     // === Dice / Movement ===
@@ -218,6 +219,7 @@ public class GameEngineService {
                 movePlayer(state, state.getCurrentPlayer(), d1 + d2);
             } else {
                 state.setPhase(GamePhase.POST_ROLL);
+                advanceIfCurrentPlayerBankrupt(state);
             }
             return;
         }
@@ -271,7 +273,8 @@ public class GameEngineService {
             p.subtractMoney(sp.amount());
             checkBankrupt(state, pi);
             state.setPhase(GamePhase.POST_ROLL);
-            if (isDoubles(state) && !p.isInJail() && state.getDoublesCount() > 0 && p.isHuman()) state.setPhase(GamePhase.ROLL);
+            if (isDoubles(state) && !p.isInJail() && state.getDoublesCount() > 0 && p.isHuman() && !p.isBankrupt()) state.setPhase(GamePhase.ROLL);
+            advanceIfCurrentPlayerBankrupt(state);
             return;
         }
 
@@ -304,6 +307,7 @@ public class GameEngineService {
         checkBankrupt(state, pi);
         state.setPhase(GamePhase.POST_ROLL);
         if (isDoubles(state) && !p.isInJail() && state.getDoublesCount() > 0 && p.isHuman() && !p.isBankrupt()) state.setPhase(GamePhase.ROLL);
+        advanceIfCurrentPlayerBankrupt(state);
     }
 
     public int calculateRent(GameState state, int si, int diceTotal) {
@@ -341,6 +345,12 @@ public class GameEngineService {
         p.setPosition(10);
         p.setInJail(true);
         p.setJailTurns(0);
+    }
+
+    private void advanceIfCurrentPlayerBankrupt(GameState state) {
+        if (!state.isGameOver() && state.getPlayers().get(state.getCurrentPlayer()).isBankrupt()) {
+            nextPlayer(state);
+        }
     }
 
     public void checkBankrupt(GameState state, int pi) {
@@ -403,7 +413,8 @@ public class GameEngineService {
     }
 
     public void nextPlayer(GameState state) {
-        if (isDoubles(state) && !state.getPlayers().get(state.getCurrentPlayer()).isInJail() && state.getDoublesCount() > 0) {
+        if (isDoubles(state) && !state.getPlayers().get(state.getCurrentPlayer()).isInJail()
+                && state.getDoublesCount() > 0 && !state.getPlayers().get(state.getCurrentPlayer()).isBankrupt()) {
             state.setPhase(GamePhase.ROLL);
             return;
         }
