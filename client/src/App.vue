@@ -54,9 +54,26 @@ watch(() => lobby.screen, (val) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', scaleGame)
   document.addEventListener('keydown', onKeydown)
+
+  // Auto-rejoin if we have a saved session
+  const saved = localStorage.getItem('bb-rejoin')
+  if (saved) {
+    try {
+      const { gameCode, playerName } = JSON.parse(saved)
+      const res = await fetch(`/api/lobby/can-rejoin?gameCode=${encodeURIComponent(gameCode)}&playerName=${encodeURIComponent(playerName)}`)
+      if (res.ok) {
+        lobby.screen = 'game'
+        connection.connect(gameCode, playerName)
+      } else {
+        localStorage.removeItem('bb-rejoin')
+      }
+    } catch {
+      localStorage.removeItem('bb-rejoin')
+    }
+  }
 })
 
 onUnmounted(() => {

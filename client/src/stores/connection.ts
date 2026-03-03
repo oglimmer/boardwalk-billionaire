@@ -24,6 +24,7 @@ export const useConnectionStore = defineStore('connection', {
     connect(gameCode: string, playerName: string) {
       this.gameCode = gameCode
       this.playerName = playerName
+      localStorage.setItem('bb-rejoin', JSON.stringify({ gameCode, playerName }))
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const host = window.location.host
@@ -101,6 +102,7 @@ export const useConnectionStore = defineStore('connection', {
       this.connected = false
       this.gameCode = null
       this.playerName = null
+      localStorage.removeItem('bb-rejoin')
     },
   },
 })

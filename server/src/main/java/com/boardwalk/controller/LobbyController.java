@@ -55,4 +55,22 @@ public class LobbyController {
         if (session == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(sessionManager.toLobbyResponse(session));
     }
+
+    @GetMapping("/can-rejoin")
+    public ResponseEntity<Void> canRejoin(@RequestParam String gameCode, @RequestParam String playerName) {
+        GameSession session = sessionManager.getSession(gameCode.toUpperCase());
+        if (session == null) return ResponseEntity.notFound().build();
+        synchronized (session) {
+            if (!session.isStarted() || session.getGameState().isGameOver()) {
+                return ResponseEntity.notFound().build();
+            }
+            String dcName = playerName + " (DC)";
+            for (var player : session.getGameState().getPlayers()) {
+                if (!player.isHuman() && !player.isBankrupt() && player.getName().equals(dcName)) {
+                    return ResponseEntity.ok().build();
+                }
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
 }

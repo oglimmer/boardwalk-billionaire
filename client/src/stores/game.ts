@@ -149,6 +149,7 @@ export const useGameStore = defineStore('game', {
 
       // Show win modal when game ends
       if (d.gameOver && !wasGameOver) {
+        localStorage.removeItem('bb-rejoin')
         const winner = d.players.find(p => !p.isBankrupt)
         if (winner) {
           this.modal = { visible: true, type: 'win', payload: { name: winner.name } }
