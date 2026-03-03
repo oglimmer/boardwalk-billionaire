@@ -32,6 +32,8 @@ export const useConnectionStore = defineStore('connection', {
       const client = new Client({
         brokerURL: wsUrl,
         reconnectDelay: 3000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
         onConnect: () => {
           this.connected = true
 
@@ -63,6 +65,9 @@ export const useConnectionStore = defineStore('connection', {
         onDisconnect: () => {
           this.connected = false
         },
+        onWebSocketClose: () => {
+          this.connected = false
+        },
         onStompError: (frame) => {
           console.error('STOMP error:', frame.headers['message'])
         },
@@ -73,7 +78,7 @@ export const useConnectionStore = defineStore('connection', {
     },
 
     startGame() {
-      if (!stompClient || !this.gameCode) return
+      if (!stompClient || !this.gameCode || !this.connected) return
       stompClient.publish({
         destination: `/app/game/${this.gameCode}/start`,
         body: '{}',
@@ -81,7 +86,7 @@ export const useConnectionStore = defineStore('connection', {
     },
 
     sendAction(type: string, payload: Record<string, unknown> = {}) {
-      if (!stompClient || !this.gameCode) return
+      if (!stompClient || !this.gameCode || !this.connected) return
       stompClient.publish({
         destination: `/app/game/${this.gameCode}/action`,
         body: JSON.stringify({ type, payload }),

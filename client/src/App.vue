@@ -2,6 +2,9 @@
   <LobbyScreen v-if="lobby.screen === 'lobby'" />
   <LobbyWaiting v-else-if="lobby.screen === 'waiting'" />
   <template v-else>
+    <div v-if="!connection.connected" class="reconnect-banner">
+      Connection lost — reconnecting...
+    </div>
     <div class="game-container">
       <div ref="gameRef" class="game">
         <GameBoard />
@@ -15,6 +18,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useGameStore } from './stores/game'
+import { useConnectionStore } from './stores/connection'
 import { useLobbyStore } from './stores/lobby'
 import GameBoard from './components/GameBoard.vue'
 import Sidebar from './components/Sidebar.vue'
@@ -23,6 +27,7 @@ import LobbyScreen from './components/LobbyScreen.vue'
 import LobbyWaiting from './components/LobbyWaiting.vue'
 
 const store = useGameStore()
+const connection = useConnectionStore()
 const lobby = useLobbyStore()
 const gameRef = ref<HTMLDivElement | null>(null)
 
@@ -61,6 +66,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.reconnect-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: #d32f2f; color: #fff; text-align: center;
+  padding: 8px; font-weight: bold; font-size: 14px;
+}
 .game-container { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
 .game { display: flex; gap: 16px; position: absolute; top: 50%; left: 50%; transform-origin: center center; }
 

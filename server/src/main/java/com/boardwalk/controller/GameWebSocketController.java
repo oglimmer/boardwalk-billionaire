@@ -34,22 +34,47 @@ public class GameWebSocketController {
         GameSession session = sessionManager.getSession(gameCode);
         if (session == null) return;
 
+        boolean reconnected = false;
         synchronized (session) {
-            // Associate the STOMP session ID with this player name
-            // Replace the temp HTTP session ID with the real one
-            String tempId = null;
-            for (var entry : session.getSessionNames().entrySet()) {
-                if (entry.getValue().equals(playerName) && entry.getKey().startsWith("http-")) {
-                    tempId = entry.getKey();
-                    break;
+            if (session.isStarted()) {
+                // Reconnection: find disconnected player by name and restore them
+                GameState state = session.getGameState();
+                for (int i = 0; i < state.getPlayers().size(); i++) {
+                    Player p = state.getPlayers().get(i);
+                    String dcName = playerName + " (DC)";
+                    if (!p.isHuman() && p.getName().equals(dcName)) {
+                        p.setHuman(true);
+                        p.setName(playerName);
+                        session.getPlayerSessions().put(i, sessionId);
+                        session.getSessionNames().put(sessionId, playerName);
+                        reconnected = true;
+                        log.info("Player {} reconnected to game {} at index {}", playerName, gameCode, i);
+                        break;
+                    }
+                }
+            } else {
+                // Lobby phase: associate the STOMP session ID with this player name
+                // Replace the temp HTTP session ID with the real one
+                String tempId = null;
+                for (var entry : session.getSessionNames().entrySet()) {
+                    if (entry.getValue().equals(playerName) && entry.getKey().startsWith("http-")) {
+                        tempId = entry.getKey();
+                        break;
+                    }
+                }
+                if (tempId != null) {
+                    session.getSessionNames().remove(tempId);
+                    session.getSessionNames().put(sessionId, playerName);
+                } else if (!session.isFull()) {
+                    session.getSessionNames().put(sessionId, playerName);
                 }
             }
-            if (tempId != null) {
-                session.getSessionNames().remove(tempId);
-                session.getSessionNames().put(sessionId, playerName);
-            } else if (!session.isFull() && !session.isStarted()) {
-                session.getSessionNames().put(sessionId, playerName);
-            }
+        }
+
+        if (reconnected) {
+            broadcastState(session);
+            scheduleAiIfNeeded(session);
+            return;
         }
 
         // Broadcast lobby update
