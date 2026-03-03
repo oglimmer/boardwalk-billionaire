@@ -31,6 +31,13 @@ spec:
                 name: {{ include "boardwalk.fullname" . }}-backend
                 port:
                   number: 8080
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "boardwalk.fullname" . }}-backend
+                port:
+                  number: 8080
           - path: /
             pathType: Prefix
             backend:

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boardwalk Billionaire — Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #16213e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+        }
+        .stat-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .empty {
+            color: #666;
+            font-style: italic;
+            padding: 2rem;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2a2a4a;
+        }
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: #0f1a30;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            font-weight: 600;
+        }
+        td {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid #2a2a4a;
+            font-size: 0.875rem;
+        }
+        tr:hover td {
+            background: #1a2744;
+        }
+        .code {
+            font-family: "SF Mono", "Fira Code", monospace;
+            font-weight: 600;
+            color: #64b5f6;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-lobby {
+            background: #1b3a4b;
+            color: #4fc3f7;
+        }
+        .badge-active {
+            background: #1b4332;
+            color: #69db7c;
+        }
+        .badge-finished {
+            background: #3d2c2c;
+            color: #e57373;
+        }
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .player {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: #2a2a4a;
+        }
+        .player.bankrupt {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+        .player.current {
+            outline: 1.5px solid #64b5f6;
+        }
+        .player .money {
+            color: #81c784;
+        }
+        .player .ai {
+            color: #888;
+            font-style: italic;
+        }
+        .btn-delete {
+            background: transparent;
+            border: 1px solid #e57373;
+            color: #e57373;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .btn-delete:hover {
+            background: #e57373;
+            color: #1a1a2e;
+        }
+        .meta-row {
+            color: #888;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Boardwalk Billionaire — Admin</h1>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="label">Total Games</div>
+            <div class="value" th:text="${totalGames}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Active</div>
+            <div class="value" th:text="${activeGames}">0</div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(games)}" class="empty">No games running.</div>
+
+    <table th:unless="${#lists.isEmpty(games)}">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Players</th>
+                <th>Turn</th>
+                <th>Phase</th>
+                <th>Properties Owned</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="game : ${games}">
+                <td>
+                    <span class="code" th:text="${game.gameCode}">ABC123</span>
+                </td>
+                <td>
+                    <span th:if="${!game.started}" class="badge badge-lobby">Lobby</span>
+                    <span th:if="${game.started and !game.gameOver}" class="badge badge-active">In Progress</span>
+                    <span th:if="${game.started and game.gameOver}" class="badge badge-finished">Finished</span>
+                </td>
+                <td>
+                    <!-- Lobby: just show count -->
+                    <span th:if="${!game.started}" th:text="${game.joinedCount + '/' + game.humanSlots + ' joined'}">1/2 joined</span>
+                    <!-- Started: show player details -->
+                    <div th:if="${game.started}" class="player-list">
+                        <span th:each="player, iter : ${game.players}"
+                              class="player"
+                              th:classappend="${player.bankrupt ? 'bankrupt' : ''} + ' ' + ${iter.index == game.currentPlayer and !game.gameOver ? 'current' : ''}">
+                            <span th:unless="${player.human}" class="ai">AI</span>
+                            <span th:text="${player.name}">Name</span>
+                            <span class="money" th:text="'$' + ${#numbers.formatInteger(player.money, 1, 'COMMA')}">$1500</span>
+                        </span>
+                    </div>
+                </td>
+                <td th:text="${game.started ? game.turn : '—'}">0</td>
+                <td th:text="${game.started ? game.phase : '—'}">ROLL</td>
+                <td th:text="${game.started ? game.propertyCount : '—'}">0</td>
+                <td>
+                    <form th:action="@{/admin/delete/{code}(code=${game.gameCode})}" method="post" style="display:inline"
+                          onsubmit="return confirm('Delete game ' + this.closest('tr').querySelector('.code').textContent + '?')">
+                        <button type="submit" class="btn-delete">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

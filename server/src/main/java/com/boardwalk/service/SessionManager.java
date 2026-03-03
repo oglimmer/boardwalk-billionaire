@@ -64,6 +64,10 @@ public class SessionManager {
         return null;
     }
 
+    public Collection<GameSession> getAllSessions() {
+        return sessions.values();
+    }
+
     public void removeSession(String gameCode) {
         sessions.remove(gameCode);
     }
