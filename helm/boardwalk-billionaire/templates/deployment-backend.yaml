@@ -33,6 +33,15 @@ spec:
           env:
             - name: JAVA_OPTS
               value: {{ .Values.backend.env.JAVA_OPTS | quote }}
+          # Spring Boot boot on the throttled arm64 node can take a few minutes;
+          # the startupProbe gates liveness/readiness so a slow boot is never
+          # mistaken for a hung process (which previously caused a crash loop).
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /actuator/health
